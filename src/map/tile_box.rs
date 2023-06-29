@@ -466,34 +466,42 @@ mod test {
                 let mut index = TileIndex { z, x, y };
                 while let Some(p) = index.parent() {
                     assert!(tile_box.is_ancestor(&p).is_some());
-                    assert!(tile_box
-                        .is_ancestor(&TileIndex {
-                            z: p.z,
-                            x: p.x + 1,
-                            y: p.y,
-                        })
-                        .is_none());
-                    assert!(tile_box
-                        .is_ancestor(&TileIndex {
-                            z: p.z,
-                            x: p.x,
-                            y: p.y + 1,
-                        })
-                        .is_none());
-                    assert!(tile_box
-                        .is_ancestor(&TileIndex {
-                            z: p.z,
-                            x: p.x - 1,
-                            y: p.y,
-                        })
-                        .is_none());
-                    assert!(tile_box
-                        .is_ancestor(&TileIndex {
-                            z: p.z,
-                            x: p.x,
-                            y: p.y - 1,
-                        })
-                        .is_none());
+                    if p.x + 1 < max {
+                        assert!(tile_box
+                            .is_ancestor(&TileIndex {
+                                z: p.z,
+                                x: p.x + 1,
+                                y: p.y,
+                            })
+                            .is_none());
+                    }
+                    if p.y + 1 < max {
+                        assert!(tile_box
+                            .is_ancestor(&TileIndex {
+                                z: p.z,
+                                x: p.x,
+                                y: p.y + 1,
+                            })
+                            .is_none());
+                    }
+                    if p.x > 0 {
+                        assert!(tile_box
+                            .is_ancestor(&TileIndex {
+                                z: p.z,
+                                x: p.x - 1,
+                                y: p.y,
+                            })
+                            .is_none());
+                    }
+                    if p.y > 0 {
+                        assert!(tile_box
+                            .is_ancestor(&TileIndex {
+                                z: p.z,
+                                x: p.x,
+                                y: p.y - 1,
+                            })
+                            .is_none());
+                    }
                     index = p;
                 }
             }
