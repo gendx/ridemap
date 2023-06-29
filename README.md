@@ -1,5 +1,10 @@
 # Ridemap - interactive map to visualize GPS tracks
 
+[![Safety Dance](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
+[![Minimum Rust 1.70](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://releases.rs/docs/1.70.0/)
+[![Build Status](https://github.com/gendx/ridemap/workflows/Build/badge.svg)](https://github.com/gendx/ridemap/actions/workflows/build.yml)
+[![Test Status](https://github.com/gendx/ridemap/workflows/Tests/badge.svg)](https://github.com/gendx/ridemap/actions/workflows/tests.yml)
+
 This program allows you to visualize GPS tracks on an interactive map of the world.
 GPS tracks can be loaded from local GPX files, or fetched via the Strava API.
 It is written in [Rust](https://www.rust-lang.org/).
