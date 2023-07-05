@@ -126,7 +126,7 @@ impl TileRequestReceiver {
                     BatchTileRequest::Evicted(tile) => vec![TileRequest::Evicted(tile)],
                     BatchTileRequest::End => vec![TileRequest::End],
                 };
-                stream::iter(requests.into_iter())
+                stream::iter(requests)
             })
             .take_while(|tile_request| future::ready(!matches!(tile_request, TileRequest::End)))
             .filter_map(move |tile_request| {
