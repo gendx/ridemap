@@ -9,6 +9,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly
+
+      - name: Create Cargo.lock file
+        run: cargo generate-lockfile
+      - name: Cache Cargo registry
+        id: cache-cargo-registry
+        uses: actions/cache@v1
+        with:
+          path: ~/.cargo/registry
+          key: cargo-registry-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-${{ hashFiles('Cargo.toml') }}
+            cargo-registry
+      - name: Check the cache status
+        if: ${{ steps.cache-cargo-registry.outputs.cache-hit == 'true' }}
+        run: echo "Cargo registry cache hit :)"
+
       - name: Install development packages for GTK-4
         run: sudo apt install -y libgtk-4-dev --no-install-recommends
       - name: Tests in debug mode
