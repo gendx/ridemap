@@ -2,6 +2,12 @@ on: [push, pull_request]
 name: Tests
 jobs:
   test:
+    strategy:
+      matrix:
+        backend:
+          - gtk4
+          - piston
+      fail-fast: false
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: "-D warnings"
@@ -26,8 +32,10 @@ jobs:
         run: echo "Cargo registry cache hit :)"
 
       - name: Install development packages for GTK-4
+        if: ${{ matrix.backend == 'gtk4' }}
         run: sudo apt install -y libgtk-4-dev --no-install-recommends
+
       - name: Tests in debug mode
-        run: cargo test --verbose
+        run: cargo test --verbose --no-default-features --features backend_${{ matrix.backend }}
       - name: Tests in release mode
-        run: cargo test --release --verbose
+        run: cargo test --release --verbose --no-default-features --features backend_${{ matrix.backend }}

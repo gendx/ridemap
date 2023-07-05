@@ -2,6 +2,12 @@ on: [push, pull_request]
 name: Lints on nightly toolchain
 jobs:
   clippy:
+    strategy:
+      matrix:
+        backend:
+          - gtk4
+          - piston
+      fail-fast: false
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: "-D warnings"
@@ -27,8 +33,10 @@ jobs:
         run: echo "Cargo registry cache hit :)"
 
       - name: Install development packages for GTK-4
+        if: ${{ matrix.backend == 'gtk4' }}
         run: sudo apt install -y libgtk-4-dev --no-install-recommends
+
       - name: Check Clippy lints
-        run: cargo clippy --verbose
+        run: cargo clippy --verbose --no-default-features --features backend_${{ matrix.backend }}
       - name: Check Clippy lints on tests
-        run: cargo clippy --verbose --tests
+        run: cargo clippy --verbose --no-default-features --features backend_${{ matrix.backend }} --tests
