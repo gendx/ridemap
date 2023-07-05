@@ -31,13 +31,13 @@ jobs:
       - name: Check Cargo version
         run: cargo -V > cargo.version.txt
       - name: Cache Cargo target
-        uses: actions/cache/restore@v3
+        uses: actions/cache@v3
         with:
           path: target
-          key: cargo-target-debug-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          key: cargo-target-check-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            cargo-target-debug-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}-${{ hashFiles('Cargo.toml') }}
-            cargo-target-debug-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}
+            cargo-target-check-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}-${{ hashFiles('Cargo.toml') }}
+            cargo-target-check-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}
 
       - name: Install development packages for GTK-4
         if: ${{ matrix.backend == 'gtk4' }}
