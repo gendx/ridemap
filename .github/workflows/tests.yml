@@ -4,9 +4,17 @@ jobs:
   test:
     strategy:
       matrix:
+        mode:
+          - debug
+          - release
         backend:
           - gtk4
           - piston
+        include:
+          - mode: debug
+            cli: ""
+          - mode: release
+            cli: "--release"
       fail-fast: false
     runs-on: ubuntu-latest
     env:
@@ -19,23 +27,28 @@ jobs:
       - name: Create Cargo.lock file
         run: cargo generate-lockfile
       - name: Cache Cargo registry
-        id: cache-cargo-registry
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.cargo/registry
           key: cargo-registry-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
             cargo-registry-${{ hashFiles('Cargo.toml') }}
             cargo-registry
-      - name: Check the cache status
-        if: ${{ steps.cache-cargo-registry.outputs.cache-hit == 'true' }}
-        run: echo "Cargo registry cache hit :)"
+
+      - name: Check Cargo version
+        run: cargo -V > cargo.version.txt
+      - name: Cache Cargo target
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: cargo-target-${{ matrix.mode }}-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}-${{ hashFiles('Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-target-${{ matrix.mode }}-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}-${{ hashFiles('Cargo.toml') }}
+            cargo-target-${{ matrix.mode }}-${{ matrix.backend }}-${{ hashFiles('cargo.version.txt') }}
 
       - name: Install development packages for GTK-4
         if: ${{ matrix.backend == 'gtk4' }}
         run: sudo apt install -y libgtk-4-dev --no-install-recommends
 
-      - name: Tests in debug mode
-        run: cargo test --verbose --no-default-features --features backend_${{ matrix.backend }}
-      - name: Tests in release mode
-        run: cargo test --release --verbose --no-default-features --features backend_${{ matrix.backend }}
+      - name: Tests in ${{ matrix.mode }} mode
+        run: cargo test ${{ matrix.cli }} --verbose --no-default-features --features backend_${{ matrix.backend }}
