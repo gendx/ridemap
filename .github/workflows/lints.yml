@@ -10,6 +10,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy
+      - name: Install development packages for GTK-4
+        run: sudo apt install -y libgtk-4-dev --no-install-recommends
       - name: Check Clippy lints
         run: cargo clippy --verbose
       - name: Check Clippy lints on tests

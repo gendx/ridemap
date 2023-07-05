@@ -67,7 +67,9 @@ impl Cache {
             })
         })
         .await
-        .context("Failed to join background task to load Strava activity (id = {id}) from cache")?
+        .with_context(|| {
+            format!("Failed to join background task to load Strava activity (id = {id}) from cache")
+        })?
     }
 
     /// Reads the given map tile.

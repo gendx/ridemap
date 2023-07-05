@@ -1,13 +1,10 @@
 //! Module containing various UI utilities.
 
-use graphics::image::Image;
+use crate::ui::tracks::TrackStats;
 use image::{ImageError, ImageFormat, RgbaImage};
 use log::warn;
-use piston_window::G2dTexture;
-use piston_window::ImageSize;
 use rand::distributions::Open01;
 use rand::{thread_rng, Rng};
-use std::borrow::Borrow;
 
 /// RGBA color.
 #[derive(Clone, Copy)]
@@ -25,30 +22,11 @@ impl Color {
 }
 
 /// A loaded map tile.
-pub struct Tile {
-    /// Decoded image pixels of this tile.
+pub struct Tile<Image> {
+    /// Decoded image pixels of this tile, loaded for the current UI framework.
     pub image: Image,
-    /// 2D texture loaded with this image.
-    pub texture: G2dTexture,
     /// PNG data of this tile.
     pub png_image: Box<[u8]>,
-}
-
-/// Trait to convert a [`Tile`] to a texture.
-pub trait TextureTile<'a>: ImageSize {
-    /// Texture type.
-    type Target: Borrow<Self>;
-
-    /// Converts the given tile to a texture.
-    fn from_tile(tile: &'a Tile) -> Self::Target;
-}
-
-impl<'a> TextureTile<'a> for G2dTexture {
-    type Target = &'a Self;
-
-    fn from_tile(tile: &'a Tile) -> Self::Target {
-        &tile.texture
-    }
 }
 
 /// Decode an image in RGBA format from PNG data.
@@ -64,4 +42,16 @@ pub fn warn_on_error<E: std::fmt::Debug>(x: Result<(), E>, msg: &str) {
         Ok(()) => {}
         Err(e) => warn!("Failed to send {}: {:?}", msg, e),
     }
+}
+
+/// Rendering statistics.
+pub struct RenderStats {
+    /// Number of map tiles drawn.
+    pub drawn_tiles_count: usize,
+    /// Statistics about GPS tracks.
+    pub track_stats: TrackStats,
+    /// Total number of segments, including invisible ones.
+    pub segment_count: usize,
+    /// Number of segments drawn.
+    pub drawn_segment_count: usize,
 }

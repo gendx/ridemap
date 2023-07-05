@@ -113,22 +113,25 @@ impl VisiblePolyline<'_> {
     }
 
     /// Returns an iterator over the visible segments of the polyline.
-    pub fn segments(&self) -> impl Iterator<Item = (Point<i32>, Point<i32>)> + '_ {
-        self.points.windows(2).filter_map(|segment| {
-            let p0 = self.convert(&segment[0]);
-            let p1 = self.convert(&segment[1]);
+    pub fn segments(&self) -> impl Iterator<Item = (usize, Point<i32>, Point<i32>)> + '_ {
+        self.points
+            .windows(2)
+            .enumerate()
+            .filter_map(|(i, segment)| {
+                let p0 = self.convert(&segment[0]);
+                let p1 = self.convert(&segment[1]);
 
-            // Filter out invisible segments.
-            if (p0.x < 0 && p1.x < 0)
-                || (p0.y < 0 && p1.y < 0)
-                || (p0.x > self.iwsize.x && p1.x > self.iwsize.x)
-                || (p0.y > self.iwsize.y && p1.y > self.iwsize.y)
-            {
-                None
-            } else {
-                Some((p0, p1))
-            }
-        })
+                // Filter out invisible segments.
+                if (p0.x < 0 && p1.x < 0)
+                    || (p0.y < 0 && p1.y < 0)
+                    || (p0.x > self.iwsize.x && p1.x > self.iwsize.x)
+                    || (p0.y > self.iwsize.y && p1.y > self.iwsize.y)
+                {
+                    None
+                } else {
+                    Some((i, p0, p1))
+                }
+            })
     }
 
     /// Converts a point from world pixel coordinates to window pixel

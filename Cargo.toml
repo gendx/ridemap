@@ -10,13 +10,16 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
+cairo-rs = { version = "0.17.10", features = ["freetype"], optional = true }
 clap = { version = "4.3.5", features = ["derive"] }
 env_logger = "0.10.0"
 futures = { version = "0.3.28", default-features = false, features = ["std", "async-await"] }
+freetype-rs = { version = "0.32.0", optional = true }
+gtk4 = { version = "0.6.6", optional = true }
 image = { version = "0.24.6", default-features = false, features = ["png"] }
 log = "0.4.19"
-piston_window = "0.128.0"
-piston2d-graphics = "0.43.0"
+piston_window = { version = "0.128.0", optional = true }
+piston2d-graphics = { version = "0.43.0", optional = true }
 rand = "0.8.5"
 regex = { version = "1.8.4", default-features = false, features = ["std"] }
 reqwest = { version = "0.11.18", features = ["json"] }
@@ -24,6 +27,11 @@ serde = { version = "1.0.164", features = ["derive"] }
 serde_json = "1.0.97"
 serde-xml-rs = "0.6.0"
 tokio = { version = "1.28.2", features = ["rt-multi-thread"] }
+
+[features]
+default = ["backend_gtk4"]
+backend_gtk4 = ["dep:gtk4", "dep:cairo-rs", "dep:freetype-rs"]
+backend_piston = ["dep:piston_window", "dep:piston2d-graphics"]
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--document-private-items"]

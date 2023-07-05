@@ -7,21 +7,19 @@ use crate::caching::lru::Lru;
 use crate::map::tile_box::TileBox;
 use crate::map::tile_channel::TileRequestSender;
 use crate::map::tiles::TileIndex;
-use graphics::image::Image;
 use image::RgbaImage;
-use log::{debug, error, trace};
-use piston_window::{PistonWindow, Texture, TextureSettings};
+use log::{debug, trace};
 use std::cell::Cell;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 /// State on the UI thread to manage map tiles.
-pub struct TileState {
+pub struct TileState<Image> {
     /// Channel to request tiles from the background thread.
     tiles_tx: TileRequestSender,
     /// LRU cache of tiles loaded in memory and ready to use on the UI thread.
-    tiles: Lru<TileIndex, Tile>,
+    tiles: Lru<TileIndex, Tile<Image>>,
     /// Box of tiles currently visible in the UI window.
     tile_box: TileBox,
     /// Whether to speculatively load tiles based on the mouse movements.
@@ -37,7 +35,7 @@ pub struct TileState {
     iteration: Rc<Cell<usize>>,
 }
 
-impl TileState {
+impl<Image> TileState<Image> {
     /// Capacity of the in-memory LRU cache of tiles.
     const LRU_CAPACITY: usize = 200;
 
@@ -115,10 +113,10 @@ impl TileState {
     ///   tile in the cache.
     pub fn process_tile(
         &mut self,
-        piston_window: &mut PistonWindow,
         index: TileIndex,
         png_image: Box<[u8]>,
         rgba_image: RgbaImage,
+        create_image: impl FnOnce(RgbaImage) -> Option<Image>,
     ) -> bool {
         debug!(
             "[{}] Received tile {:?} = {} bytes",
@@ -148,21 +146,7 @@ impl TileState {
                     self.max_tile_level as usize + 2
                 }
             },
-            || match Texture::from_image(
-                &mut piston_window.create_texture_context(),
-                &rgba_image,
-                &TextureSettings::new(),
-            ) {
-                Ok(texture) => Some(Tile {
-                    image: Image::new().rect(index.rect()),
-                    texture,
-                    png_image,
-                }),
-                Err(e) => {
-                    error!("Error creating texture: {}", e);
-                    None
-                }
-            },
+            || create_image(rgba_image).map(|image| Tile { image, png_image }),
         );
 
         if let Some(evicted) = evicted {
@@ -181,8 +165,8 @@ impl TileState {
     /// The returned tiles are sorted from small to large zoom level (so that
     /// tiles with a larger zoom level will appear on top if tiles are
     /// rendered in order).
-    pub fn tiles_to_draw(&self) -> Vec<(TileIndex, &Tile)> {
-        let mut tiles_to_draw: HashMap<TileIndex, &Tile> = HashMap::new();
+    pub fn tiles_to_draw(&self) -> Vec<(TileIndex, &Tile<Image>)> {
+        let mut tiles_to_draw: HashMap<TileIndex, &Tile<Image>> = HashMap::new();
         for mut index in self.tile_box.tile_indices() {
             loop {
                 if let Some(tile) = self.tiles.get(&index) {
@@ -196,7 +180,7 @@ impl TileState {
             }
         }
 
-        let mut tiles_to_draw: Vec<(TileIndex, &Tile)> = tiles_to_draw.drain().collect();
+        let mut tiles_to_draw: Vec<(TileIndex, &Tile<Image>)> = tiles_to_draw.drain().collect();
         tiles_to_draw.sort_by(|a, b| a.0.cmp(&b.0));
 
         tiles_to_draw

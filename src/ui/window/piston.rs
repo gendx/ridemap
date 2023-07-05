@@ -1,25 +1,27 @@
-//! Window on the GUI.
+//! Window backed by piston.
 
-use super::camera::Camera;
-use super::tiles::TileState;
-use super::tracks::{TrackState, TrackStats};
-use super::util::{warn_on_error, TextureTile};
-use super::UiMessage;
 use crate::config::FONT_PATH;
 use crate::map::tile_channel::TileRequestSender;
+use crate::ui::camera::Camera;
+use crate::ui::tiles::TileState;
+use crate::ui::tracks::TrackState;
+use crate::ui::util::{warn_on_error, RenderStats};
+use crate::ui::UiMessage;
+use anyhow::bail;
+use anyhow::Context as AnyhowContext;
 use futures::channel::oneshot;
 use graphics::character::CharacterCache;
+use graphics::image::Image;
 use graphics::line::{Line, Shape};
 use graphics::types::FontSize;
 use graphics::Graphics;
-use log::{debug, info, trace};
+use log::{debug, error, info, trace};
 use piston_window::ellipse::circle;
 use piston_window::{
-    Button, ButtonArgs, ButtonState, Context, Event, Filter, GenericEvent, Glyphs, Input, Key,
-    Loop, Motion, MouseButton, PistonWindow, ResizeArgs, TextureContext, TextureSettings,
-    Transformed, WindowSettings,
+    Button, ButtonArgs, ButtonState, Context, Event, Filter, G2dTexture, GenericEvent, Glyphs,
+    Input, Key, Loop, Motion, MouseButton, PistonWindow, ResizeArgs, Texture, TextureContext,
+    TextureSettings, Transformed, WindowSettings,
 };
-use std::borrow::Borrow;
 use std::cell::Cell;
 use std::cmp::Ordering;
 use std::fmt::Debug;
@@ -31,7 +33,7 @@ pub struct Window {
     ui_rx: Receiver<UiMessage>,
     cancel_tx: oneshot::Sender<()>,
     camera: Camera,
-    tile_state: TileState,
+    tile_state: TileState<(Image, G2dTexture)>,
     track_state: TrackState,
     lazy_ui_refresh: bool,
     thick: bool,
@@ -61,12 +63,15 @@ impl Window {
         speculative_tile_load: bool,
         max_pixels_per_tile: usize,
         max_tile_level: i32,
-    ) {
+    ) -> anyhow::Result<()> {
         let mut piston_window =
-            WindowSettings::new("Ridemap", (Self::INITIAL_WIDTH, Self::INITIAL_HEIGHT))
+            match WindowSettings::new("Ridemap", (Self::INITIAL_WIDTH, Self::INITIAL_HEIGHT))
                 .exit_on_esc(true)
                 .build()
-                .unwrap_or_else(|e| panic!("Failed to build PistonWindow: {}", e));
+            {
+                Ok(window) => window,
+                Err(e) => bail!("Failed to build PistonWindow: {e:?}"),
+            };
 
         let window = Window::new(
             ui_rx,
@@ -77,11 +82,11 @@ impl Window {
             max_pixels_per_tile,
             max_tile_level,
         );
-        window.do_loop(&mut piston_window);
+        window.do_loop(&mut piston_window)
     }
 
     /// Runs the UI loop using the given window state.
-    fn do_loop(mut self, piston_window: &mut PistonWindow) {
+    fn do_loop(mut self, piston_window: &mut PistonWindow) -> anyhow::Result<()> {
         self.tile_state.start();
         let mut glyphs = Glyphs::new(
             FONT_PATH,
@@ -92,7 +97,7 @@ impl Window {
             // Supposedly this avoids blurry text.
             TextureSettings::new().min(Filter::Nearest),
         )
-        .unwrap();
+        .context("Failed to load font from {FONT_PATH}")?;
 
         while let Some(event) = piston_window.next() {
             self.iteration.set(self.iteration.get() + 1);
@@ -120,6 +125,8 @@ impl Window {
         info!("End of window loop");
         self.tile_state.stop();
         warn_on_error(self.cancel_tx.send(()), "message on one-shot channel");
+
+        Ok(())
     }
 
     /// Creates a new window state.
@@ -261,7 +268,19 @@ impl Window {
                 } => {
                     self.need_refresh |=
                         self.tile_state
-                            .process_tile(piston_window, index, png_image, rgba_image);
+                            .process_tile(index, png_image, rgba_image, |rgba_image| {
+                                match Texture::from_image(
+                                    &mut piston_window.create_texture_context(),
+                                    &rgba_image,
+                                    &TextureSettings::new(),
+                                ) {
+                                    Ok(texture) => Some((Image::new().rect(index.rect()), texture)),
+                                    Err(e) => {
+                                        error!("Error creating texture: {}", e);
+                                        None
+                                    }
+                                }
+                            });
                 }
             }
         }
@@ -283,7 +302,9 @@ impl Window {
 
             piston_window.draw_2d(event, |context, graphics, device| {
                 let render_stats = self.render(context, graphics);
-                self.render_text(context, graphics, glyphs, render_stats);
+                if let Err(e) = self.render_text(context, graphics, glyphs, render_stats) {
+                    error!("Failed to render text: {e:?}");
+                }
                 // Update glyphs before rendering.
                 glyphs.factory.encoder.flush(device);
             });
@@ -293,10 +314,9 @@ impl Window {
     }
 
     /// Renders the UI on the given graphical context.
-    fn render<T, G>(&self, context: Context, graphics: &mut G) -> RenderStats
+    fn render<G>(&self, context: Context, graphics: &mut G) -> RenderStats
     where
-        for<'a> T: TextureTile<'a>,
-        G: Graphics<Texture = T>,
+        G: Graphics<Texture = G2dTexture>,
     {
         let track_stats = self.track_state.debug_statistics(&self.camera);
 
@@ -312,12 +332,9 @@ impl Window {
         let tiles_to_draw = self.tile_state.tiles_to_draw();
         for (i, (_, tile)) in tiles_to_draw.iter().enumerate() {
             trace!("Drawing tile {}/{}", i, tiles_to_draw.len());
-            tile.image.draw(
-                T::from_tile(tile).borrow(),
-                &context.draw_state,
-                tile_transform,
-                graphics,
-            );
+            let image: &Image = &tile.image.0;
+            let texture: &G2dTexture = &tile.image.1;
+            image.draw(texture, &context.draw_state, tile_transform, graphics);
         }
         debug!("Drawn tiles");
 
@@ -335,7 +352,7 @@ impl Window {
             };
 
             segment_count += poly.segments_count();
-            for (p1, p2) in poly.segments() {
+            for (_index, p1, p2) in poly.segments() {
                 drawn_segment_count += 1;
                 line.draw(
                     [p1.x as f64, p1.y as f64, p2.x as f64, p2.y as f64],
@@ -384,19 +401,20 @@ impl Window {
     }
 
     /// Renders the debugging statistics at the bottom of the UI.
-    fn render_text<T, C, G>(
+    fn render_text<C, G>(
         &self,
         context: Context,
         graphics: &mut G,
         character_cache: &mut C,
         render_stats: RenderStats,
-    ) where
-        for<'a> T: TextureTile<'a>,
-        G: Graphics<Texture = T>,
-        C: CharacterCache<Texture = T>,
+    ) -> anyhow::Result<()>
+    where
+        G: Graphics<Texture = G2dTexture>,
+        C: CharacterCache<Texture = G2dTexture>,
         C::Error: Debug,
     {
         let font_size = Self::FONT_SIZE as f64;
+
         graphics::rectangle(
             [1.0, 1.0, 1.0, 0.5],
             [
@@ -408,8 +426,9 @@ impl Window {
             context.transform,
             graphics,
         );
+
         // Render at twice the font size but with 0.5 zoom for Retina displays. See https://github.com/PistonDevelopers/piston/issues/1240#issuecomment-569318143.
-        graphics::text(
+        if let Err(e) = graphics::text(
             [0.0, 0.0, 0.0, 1.0],
             Self::FONT_SIZE * 2,
             &format!("Drawn {} tiles", render_stats.drawn_tiles_count),
@@ -419,10 +438,12 @@ impl Window {
                 .trans(0.0, self.camera.height() - 2.5 * font_size)
                 .zoom(0.5),
             graphics,
-        )
-        .unwrap();
+        ) {
+            bail!("Failed to draw text: {e:?}");
+        }
+
         let track_stats = &render_stats.track_stats;
-        graphics::text(
+        if let Err(e) = graphics::text(
             [0.0, 0.0, 0.0, 1.0],
             Self::FONT_SIZE * 2,
             &format!(
@@ -435,9 +456,11 @@ impl Window {
                 .trans(0.0, self.camera.height() - 1.5 * font_size)
                 .zoom(0.5),
             graphics,
-        )
-        .unwrap();
-        graphics::text(
+        ) {
+            bail!("Failed to draw text: {e:?}");
+        }
+
+        if let Err(e) = graphics::text(
             [0.0, 0.0, 0.0, 1.0],
             Self::FONT_SIZE * 2,
             &format!(
@@ -450,19 +473,10 @@ impl Window {
                 .trans(0.0, self.camera.height() - 0.5 * font_size)
                 .zoom(0.5),
             graphics,
-        )
-        .unwrap();
-    }
-}
+        ) {
+            bail!("Failed to draw text: {e:?}");
+        }
 
-/// Rendering statistics.
-struct RenderStats {
-    /// Number of map tiles drawn.
-    drawn_tiles_count: usize,
-    /// Statistics about GPS tracks.
-    track_stats: TrackStats,
-    /// Total number of segments, including invisible ones.
-    segment_count: usize,
-    /// Number of segments drawn.
-    drawn_segment_count: usize,
+        Ok(())
+    }
 }

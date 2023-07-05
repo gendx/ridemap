@@ -93,7 +93,7 @@ fn main() -> anyhow::Result<()> {
         // really, absolutely need to create an EventLoop on a different thread, please
         // use the `EventLoopExtUnix::new_any_thread` function.'
         let ui = thread::spawn(move || {
-            Window::ui_loop(
+            match Window::ui_loop(
                 ui_rx,
                 cancel_tx,
                 tiles_tx,
@@ -101,12 +101,14 @@ fn main() -> anyhow::Result<()> {
                 speculative_tile_load,
                 max_pixels_per_tile as usize,
                 max_tile_level,
-            );
-            info!("End of ui thread");
+            ) {
+                Ok(()) => info!("End of UI thread"),
+                Err(e) => error!("Failed to run UI thread: {e:?}"),
+            }
         });
         ui.join().unwrap();
     } else {
-        Window::ui_loop(
+        match Window::ui_loop(
             ui_rx,
             cancel_tx,
             tiles_tx,
@@ -114,8 +116,10 @@ fn main() -> anyhow::Result<()> {
             speculative_tile_load,
             max_pixels_per_tile as usize,
             max_tile_level,
-        );
-        info!("End of ui thread");
+        ) {
+            Ok(()) => info!("End of UI thread"),
+            Err(e) => error!("Failed to run UI thread: {e:?}"),
+        }
     }
 
     network.join().unwrap();
