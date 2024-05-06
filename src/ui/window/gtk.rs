@@ -14,12 +14,13 @@ use gtk4::cairo::{Context, FontFace, LineJoin};
 use gtk4::gdk::prelude::GdkCairoContextExt;
 use gtk4::gdk::Key;
 use gtk4::gdk_pixbuf::{Colorspace, Pixbuf};
-use gtk4::glib::source::{timeout_add_local, Continue};
-use gtk4::glib::Bytes;
+use gtk4::glib::signal::Propagation;
+use gtk4::glib::source::timeout_add_local;
+use gtk4::glib::{Bytes, ControlFlow};
 use gtk4::prelude::*;
 use gtk4::{
     Application, ApplicationWindow, DrawingArea, EventControllerKey, EventControllerMotion,
-    EventControllerScroll, EventControllerScrollFlags, GestureClick, Inhibit,
+    EventControllerScroll, EventControllerScrollFlags, GestureClick,
 };
 use log::{debug, info, trace, warn};
 use std::cell::{Cell, RefCell};
@@ -94,7 +95,7 @@ impl Window {
             for msg in ui_rx.try_iter() {
                 window_updates.borrow_mut().process_update(msg);
             }
-            Continue(true)
+            ControlFlow::Continue
         });
 
         // Run the application, using empty arguments rather than the CLI.
@@ -207,7 +208,7 @@ impl Window {
         let window_keyboard = shared_window.clone();
         keyboard.connect_key_pressed(move |_controller, keyval, _keycode, _state| {
             let accepted = window_keyboard.borrow_mut().handle_key_press(keyval);
-            Inhibit(accepted)
+            Propagation::from(accepted)
         });
         app_window.add_controller(keyboard);
 
@@ -215,7 +216,7 @@ impl Window {
         let window_scroll = shared_window.clone();
         scroll.connect_scroll(move |_controller, _dx, dy| {
             window_scroll.borrow_mut().handle_scroll(-dy);
-            Inhibit(true)
+            Propagation::Stop
         });
         app_window.add_controller(scroll);
 
