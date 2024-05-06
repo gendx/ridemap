@@ -268,7 +268,7 @@ impl Window {
                 } => {
                     self.need_refresh |=
                         self.tile_state
-                            .process_tile(index, png_image, rgba_image, |rgba_image| {
+                            .process_tile(index, &png_image, rgba_image, |rgba_image| {
                                 match Texture::from_image(
                                     &mut piston_window.create_texture_context(),
                                     &rgba_image,

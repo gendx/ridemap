@@ -114,7 +114,7 @@ impl<Image> TileState<Image> {
     pub fn process_tile(
         &mut self,
         index: TileIndex,
-        png_image: Box<[u8]>,
+        png_image: &[u8],
         rgba_image: RgbaImage,
         create_image: impl FnOnce(RgbaImage) -> Option<Image>,
     ) -> bool {
@@ -146,7 +146,7 @@ impl<Image> TileState<Image> {
                     self.max_tile_level as usize + 2
                 }
             },
-            || create_image(rgba_image).map(|image| Tile { image, png_image }),
+            || create_image(rgba_image).map(|image| Tile { image }),
         );
 
         if let Some(evicted) = evicted {

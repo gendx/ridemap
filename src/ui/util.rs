@@ -25,8 +25,6 @@ impl Color {
 pub struct Tile<Image> {
     /// Decoded image pixels of this tile, loaded for the current UI framework.
     pub image: Image,
-    /// PNG data of this tile.
-    pub png_image: Box<[u8]>,
 }
 
 /// Decode an image in RGBA format from PNG data.

@@ -36,8 +36,6 @@ impl LatLon {
 pub trait ToMercator {
     /// Returns the number of points on the polyline.
     fn len(&self) -> usize;
-    /// Checks whether the polyline contains any point.
-    fn is_empty(&self) -> bool;
     /// Returns the points converted into Mercator coordinates.
     fn mercator_points(&self) -> Vec<Point<f64>>;
 }
@@ -60,10 +58,6 @@ impl ToMercator for LatLonLine {
         self.coords.len()
     }
 
-    fn is_empty(&self) -> bool {
-        self.coords.is_empty()
-    }
-
     fn mercator_points(&self) -> Vec<Point<f64>> {
         self.coords.iter().map(LatLon::as_mercator).collect()
     }
@@ -82,10 +76,6 @@ pub struct Polyline {
 impl ToMercator for Polyline {
     fn len(&self) -> usize {
         self.points.len()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.points.is_empty()
     }
 
     fn mercator_points(&self) -> Vec<Point<f64>> {

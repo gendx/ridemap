@@ -80,9 +80,9 @@ impl TileRequestSender {
         // Replaces the current set of tiles.
         let mut current = self.current.write().unwrap();
         if let Some(ref tiles) = tiles {
-            current.tiles = tiles.clone();
+            current.tiles.clone_from(tiles);
         }
-        current.speculative = speculative.clone();
+        current.speculative.clone_from(&speculative);
 
         // Send the visible tiles in priority.
         if let Some(tiles) = tiles {

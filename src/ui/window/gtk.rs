@@ -155,7 +155,7 @@ impl Window {
                 rgba_image,
             } => {
                 self.tile_state
-                    .process_tile(index, png_image, rgba_image, |rgba_image| {
+                    .process_tile(index, &png_image, rgba_image, |rgba_image| {
                         let width = rgba_image.width();
                         let height = rgba_image.height();
                         let stride = width * 4;
