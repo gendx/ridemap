@@ -9,24 +9,24 @@ exclude = [".github/*"]
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.82"
 cairo-rs = { version = "0.17.10", features = ["freetype"], optional = true }
-clap = { version = "4.3.5", features = ["derive"] }
+clap = { version = "4.5.4", features = ["derive"] }
 env_logger = "0.10.0"
-futures = { version = "0.3.28", default-features = false, features = ["std", "async-await"] }
+futures = { version = "0.3.30", default-features = false, features = ["std", "async-await"] }
 freetype-rs = { version = "0.32.0", optional = true }
 gtk4 = { version = "0.6.6", optional = true }
 image = { version = "0.24.6", default-features = false, features = ["png"] }
-log = "0.4.19"
+log = "0.4.21"
 piston_window = { version = "0.128.0", optional = true }
 piston2d-graphics = { version = "0.43.0", optional = true }
 rand = "0.8.5"
-regex = { version = "1.8.4", default-features = false, features = ["std"] }
+regex = { version = "1.10.4", default-features = false, features = ["std"] }
 reqwest = { version = "0.11.18", features = ["json"] }
-serde = { version = "1.0.164", features = ["derive"] }
-serde_json = "1.0.97"
+serde = { version = "1.0.200", features = ["derive"] }
+serde_json = "1.0.116"
 serde-xml-rs = "0.6.0"
-tokio = { version = "1.28.2", features = ["rt-multi-thread"] }
+tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
 
 [features]
 default = ["backend_gtk4"]

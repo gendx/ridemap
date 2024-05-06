@@ -43,7 +43,7 @@ pub struct Window {
 
 impl Window {
     /// GTK application ID.
-    const APP_ID: &str = "com.github.gendx.ridemap";
+    const APP_ID: &'static str = "com.github.gendx.ridemap";
     /// Initial window width.
     const INITIAL_WIDTH: u32 = 1280;
     /// Initial window height.

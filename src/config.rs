@@ -75,13 +75,11 @@ impl builder::TypedValueParser for MapProviderParser {
             // TODO: use clap::builder::StyledStr once it supports coloring the arguments.
             let msg = format!(
                 "Failed to parse map provider configuration{}{}: {}\n",
-                arg_str
-                    .map(|a| format!(" ({})", a))
-                    .unwrap_or(String::new()),
+                arg_str.map(|a| format!(" ({})", a)).unwrap_or_default(),
                 value
                     .to_str()
                     .map(|f| format!(" from file `{}`", f))
-                    .unwrap_or(String::new()),
+                    .unwrap_or_default(),
                 e
             );
             clap::Error::raw(ErrorKind::Io, msg).with_cmd(cmd)
