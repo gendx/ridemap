@@ -34,11 +34,15 @@ struct GpxTrackSegment {
 /// Schema for a track point within a GPX track segment.
 #[derive(Deserialize)]
 struct GpxTrackPoint {
+    #[serde(rename = "@lat")]
     lat: f64,
+    #[serde(rename = "@lon")]
     lon: f64,
     #[allow(dead_code)]
-    ele: f64,
+    #[serde(rename = "@ele")]
+    ele: Option<f64>,
     #[allow(dead_code)]
+    #[serde(rename = "@time")]
     time: Option<String>,
 }
 

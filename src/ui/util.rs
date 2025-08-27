@@ -3,8 +3,8 @@
 use crate::ui::tracks::TrackStats;
 use image::{ImageError, ImageFormat, RgbaImage};
 use log::warn;
-use rand::distributions::Open01;
-use rand::{thread_rng, Rng};
+use rand::distr::Open01;
+use rand::{rng, Rng};
 
 /// RGBA color.
 #[derive(Clone, Copy)]
@@ -13,7 +13,7 @@ pub struct Color(pub [f32; 4]);
 impl Color {
     /// Creates a new random color.
     pub fn new_random() -> Self {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let r = rng.sample(Open01);
         let g = rng.sample(Open01);
         let b = rng.sample(Open01);
