@@ -47,7 +47,7 @@ jobs:
 
       - name: Install development packages for GTK-4
         if: ${{ matrix.backend == 'gtk4' }}
-        run: sudo apt install -y libgtk-4-dev --no-install-recommends
+        run: sudo apt update && sudo apt install -y libgtk-4-dev --no-install-recommends
 
       - name: Build
         run: cargo build --verbose --no-default-features --features backend_${{ matrix.backend }}
