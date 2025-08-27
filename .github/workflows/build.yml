@@ -8,7 +8,7 @@ jobs:
           - stable
           - beta
           - nightly
-          - 1.82.0  # MSRV
+          - 1.85.0  # MSRV
         backend:
           - gtk4
           - piston
