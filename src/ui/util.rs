@@ -30,7 +30,7 @@ pub struct Tile<Image> {
 /// Decode an image in RGBA format from PNG data.
 pub fn decode_png(bytes: &[u8]) -> Result<RgbaImage, ImageError> {
     let dynamic_image =
-        image::io::Reader::with_format(std::io::Cursor::new(bytes), ImageFormat::Png).decode()?;
+        image::ImageReader::with_format(std::io::Cursor::new(bytes), ImageFormat::Png).decode()?;
     Ok(dynamic_image.to_rgba8())
 }
 
