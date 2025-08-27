@@ -171,8 +171,7 @@ impl<'a> StravaClient<'a> {
         debug!("Parsing OAuth code");
         let req_utf8 = std::str::from_utf8(&buf)?;
         let captures = re.captures(req_utf8).ok_or_else(|| {
-            Box::new(io::Error::new(
-                io::ErrorKind::Other,
+            Box::new(io::Error::other(
                 "Invalid request from the browser".to_owned(),
             ))
         })?;
@@ -219,7 +218,7 @@ impl<'a> StravaClient<'a> {
         debug!("Query authenticated athlete");
         let response = self
             .client
-            .get(&format!("{API_URL}/athlete"))
+            .get(format!("{API_URL}/athlete"))
             .bearer_auth(&self.bearer_token)
             .send()
             .await?;
@@ -274,7 +273,7 @@ impl<'a> StravaClient<'a> {
         debug!("Query page {}", i);
         let response = self
             .client
-            .get(&format!(
+            .get(format!(
                 "{API_URL}/athlete/activities?per_page={}&page={}",
                 count_per_page,
                 i + 1
@@ -367,7 +366,7 @@ impl<'a> StravaClient<'a> {
         debug!("Query activity {}", i);
         let response = self
             .client
-            .get(&format!("{API_URL}/activities/{}", activity.id))
+            .get(format!("{API_URL}/activities/{}", activity.id))
             .bearer_auth(&self.bearer_token)
             .send()
             .await?;

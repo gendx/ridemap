@@ -135,10 +135,10 @@ impl TileRequestReceiver {
                         // Check whether the request is still valid, and categorize it (visible or
                         // speculated).
                         let current = current.read().unwrap();
-                        if current.tiles.iter().any(|&x| tile == x) {
+                        if current.tiles.contains(&tile) {
                             debug!("Request {:?}", tile);
                             Some(TileRequest::Tile(tile))
-                        } else if current.speculative.iter().any(|&x| tile == x) {
+                        } else if current.speculative.contains(&tile) {
                             debug!("Speculate {:?}", tile);
                             Some(TileRequest::Speculate(tile))
                         } else {

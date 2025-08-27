@@ -212,10 +212,7 @@ async fn fetch_strava_activities(
         .filter(|a| {
             future::ready(
                 strava_params.activity_types.is_empty()
-                    || strava_params
-                        .activity_types
-                        .iter()
-                        .any(|&typ| a.r#type == typ),
+                    || strava_params.activity_types.contains(&a.r#type),
             )
         })
         .take(strava_params.activity_count as usize);

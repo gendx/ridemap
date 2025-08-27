@@ -74,7 +74,7 @@ impl ZoomedPolyline {
     fn visible(&self, offset: Point<i32>, wsize: Point<i32>) -> bool {
         self.bbox
             .as_ref()
-            .map_or(false, |bbox| bbox.visible(offset, wsize))
+            .is_some_and(|bbox| bbox.visible(offset, wsize))
     }
 }
 

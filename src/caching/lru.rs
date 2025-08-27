@@ -101,7 +101,7 @@ where
     /// Evicts an item from the store, following:
     /// 1. the given priority predicate,
     /// 2. among items of equal priority, the least recently used item is
-    /// evicted.
+    ///    evicted.
     fn evict<P: FnMut(&K) -> usize>(&mut self, mut priority: P) -> Option<K> {
         if let Some((oldest_key, _)) = self.map.iter().min_by(|(ka, a), (kb, b)| {
             priority(kb)
