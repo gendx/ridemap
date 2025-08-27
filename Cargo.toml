@@ -7,7 +7,7 @@ repository = "https://github.com/gendx/ridemap"
 readme = "README.md"
 exclude = [".github/*"]
 edition = "2021"
-rust-version = "1.80.0"
+rust-version = "1.82.0"
 
 [dependencies]
 anyhow = "1.0.99"

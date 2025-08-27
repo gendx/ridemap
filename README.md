@@ -1,7 +1,7 @@
 # Ridemap - interactive map to visualize GPS tracks
 
 [![Safety Dance](https://img.shields.io/badge/unsafe-forbidden-success.svg)](https://github.com/rust-secure-code/safety-dance/)
-[![Minimum Rust 1.80](https://img.shields.io/badge/rust-1.80%2B-orange.svg)](https://releases.rs/docs/1.80.0/)
+[![Minimum Rust 1.82](https://img.shields.io/badge/rust-1.82%2B-orange.svg)](https://releases.rs/docs/1.82.0/)
 [![Dependencies](https://deps.rs/repo/github/gendx/ridemap/status.svg)](https://deps.rs/repo/github/gendx/ridemap)
 [![Lines of Code](https://www.aschey.tech/tokei/github/gendx/ridemap?category=code)](https://github.com/aschey/vercel-tokei)
 [![Build Status](https://github.com/gendx/ridemap/workflows/Build/badge.svg)](https://github.com/gendx/ridemap/actions/workflows/build.yml)

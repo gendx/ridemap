@@ -421,7 +421,7 @@ impl Window {
             let mut last_index = None;
             for (index, p1, p2) in poly.segments() {
                 drawn_segment_count += 1;
-                if last_index.map_or(true, |last| last + 1 < index) {
+                if last_index.is_none_or(|last| last + 1 < index) {
                     context.move_to(p1.x as f64, p1.y as f64);
                 }
                 context.line_to(p2.x as f64, p2.y as f64);
