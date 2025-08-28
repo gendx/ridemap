@@ -48,7 +48,7 @@ fn main() -> anyhow::Result<()> {
         Some(dir) => match Cache::new(dir, &map_provider) {
             Ok(c) => Some(c),
             Err(e) => {
-                error!("Couldn't create cache: {:?}", e);
+                error!("Couldn't create cache: {e:?}");
                 None
             }
         },
@@ -199,7 +199,7 @@ async fn fetch_strava_activities(
         .get_athlete()
         .await
         .context("Failed to get Strava athlete information")?;
-    debug!("Athlete = {:#?}", athlete);
+    debug!("Athlete = {athlete:#?}");
 
     // List activities.
     let activity_stream = strava.get_activity_list(

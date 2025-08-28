@@ -85,9 +85,8 @@ impl<Image> TileState<Image> {
         // Request tiles.
         let tiles = if self.tile_box != new_tile_box {
             debug!(
-                "[{}] New tile box: {:?}",
-                self.iteration.get(),
-                new_tile_box
+                "[{i}] New tile box: {new_tile_box:?}",
+                i = self.iteration.get(),
             );
             self.tile_box = new_tile_box;
             Some(self.get_request_tiles())
@@ -119,10 +118,9 @@ impl<Image> TileState<Image> {
         create_image: impl FnOnce(RgbaImage) -> Option<Image>,
     ) -> bool {
         debug!(
-            "[{}] Received tile {:?} = {} bytes",
-            self.iteration.get(),
-            index,
-            png_image.len()
+            "[{i}] Received tile {index:?} = {bytes} bytes",
+            i = self.iteration.get(),
+            bytes = png_image.len()
         );
 
         let (inserted, evicted) = self.tiles.or_insert_with(
@@ -210,22 +208,31 @@ impl<Image> TileState<Image> {
         let mut all_tiles = Vec::new();
         match x_dir {
             Ordering::Less => {
-                trace!("[{}] Speculate tiles on the right", self.iteration.get());
+                trace!(
+                    "[{i}] Speculate tiles on the right",
+                    i = self.iteration.get()
+                );
                 all_tiles.append(&mut self.tile_box.right());
             }
             Ordering::Greater => {
-                trace!("[{}] Speculate tiles on the left", self.iteration.get());
+                trace!(
+                    "[{i}] Speculate tiles on the left",
+                    i = self.iteration.get()
+                );
                 all_tiles.append(&mut self.tile_box.left());
             }
             Ordering::Equal => (),
         };
         match y_dir {
             Ordering::Less => {
-                trace!("[{}] Speculate tiles on the bottom", self.iteration.get());
+                trace!(
+                    "[{i}] Speculate tiles on the bottom",
+                    i = self.iteration.get()
+                );
                 all_tiles.append(&mut self.tile_box.bottom());
             }
             Ordering::Greater => {
-                trace!("[{}] Speculate tiles on the top", self.iteration.get());
+                trace!("[{i}] Speculate tiles on the top", i = self.iteration.get());
                 all_tiles.append(&mut self.tile_box.top());
             }
             Ordering::Equal => (),
@@ -233,7 +240,7 @@ impl<Image> TileState<Image> {
         match z_dir {
             Ordering::Less => {
                 if let Some(p) = self.tile_box.parent() {
-                    trace!("[{}] Speculate parent tiles", self.iteration.get());
+                    trace!("[{i}] Speculate parent tiles", i = self.iteration.get());
                     all_tiles.append(&mut p.tile_indices());
                 }
             }
@@ -244,7 +251,7 @@ impl<Image> TileState<Image> {
 
     /// Closes the channel requesting tiles to the background thread.
     fn close_tile_request(&self) {
-        debug!("[{}] Closing TileRequestSender", self.iteration.get());
+        debug!("[{i}] Closing TileRequestSender", i = self.iteration.get());
         Self::warn_on_tile_error(self.tiles_tx.close());
     }
 
@@ -253,18 +260,18 @@ impl<Image> TileState<Image> {
     fn request_tiles(&self, tiles: Option<Box<[TileIndex]>>, speculative: Box<[TileIndex]>) {
         if let Some(ref tiles) = tiles {
             for tile in tiles.iter() {
-                debug!("[{}] Request tile {:?}", self.iteration.get(), tile);
+                debug!("[{i}] Request tile {tile:?}", i = self.iteration.get());
             }
         }
         for tile in speculative.iter() {
-            debug!("[{}] Speculate tile {:?}", self.iteration.get(), tile);
+            debug!("[{i}] Speculate tile {tile:?}", i = self.iteration.get());
         }
         Self::warn_on_tile_error(self.tiles_tx.request_tiles(tiles, speculative));
     }
 
     /// Indicates to the background thread that the given tile was evicted.
     fn evict_tile(&self, tile: TileIndex) {
-        debug!("[{}] Evicted tile {:?}", self.iteration.get(), tile);
+        debug!("[{i}] Evicted tile {tile:?}", i = self.iteration.get());
         Self::warn_on_tile_error(self.tiles_tx.evict_tile(tile));
     }
 

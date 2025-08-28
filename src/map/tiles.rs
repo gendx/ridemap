@@ -98,7 +98,7 @@ impl<'a> Tiles<'a> {
             .for_each(|result| async {
                 match result {
                     Ok(()) => (),
-                    Err(e) => error!("Got an error: {}", e),
+                    Err(e) => error!("Got an error: {e}"),
                 }
             })
             .await;
@@ -112,7 +112,7 @@ impl<'a> Tiles<'a> {
         match tile_request {
             TileRequest::Evicted(index) => {
                 if !self.requested.lock().unwrap().remove(&index) {
-                    warn!("Tile {:?} was already evicted", index);
+                    warn!("Tile {index:?} was already evicted");
                 }
             }
             TileRequest::Speculate(index) | TileRequest::Tile(index) => {
@@ -122,7 +122,7 @@ impl<'a> Tiles<'a> {
                     debug!("New tile {:?}", index);
                     match self.get_tile_png(&index).await {
                         Ok((png_image, rgba_image)) => {
-                            debug!("Sending tile {:?} to UI = {} bytes", index, png_image.len());
+                            debug!("Sending tile {index:?} to UI = {} bytes", png_image.len());
                             self.ui_tx.send(UiMessage::Tile {
                                 index,
                                 png_image,
@@ -130,15 +130,15 @@ impl<'a> Tiles<'a> {
                             })?;
                         }
                         Err(e) => {
-                            error!("Requesting tile {:?} returned an error: {}", index, e);
+                            error!("Requesting tile {index:?} returned an error: {e}");
                             // TODO: send error
                         }
                     }
                 } else {
-                    trace!("Tile {:?} already requested", index);
+                    trace!("Tile {index:?} already requested");
                 }
             }
-            _ => error!("Unexpected tile request: {:?}", tile_request),
+            _ => error!("Unexpected tile request: {tile_request:?}"),
         }
         Ok(())
     }
@@ -146,7 +146,7 @@ impl<'a> Tiles<'a> {
     /// Fetches the given tile, and decodes it as a PNG image.
     async fn get_tile_png(&self, index: &TileIndex) -> anyhow::Result<(Box<[u8]>, RgbaImage)> {
         let bytes = self.get_tile_index(index).await?;
-        debug!("Decoding tile {:?} = {} bytes", index, bytes.len());
+        debug!("Decoding tile {index:?} = {} bytes", bytes.len());
         let rgba_image = decode_png(bytes.as_ref())
             .with_context(|| format!("Failed to decode PNG data for tile: {index:?}"))?;
         Ok((bytes, rgba_image))
@@ -157,13 +157,13 @@ impl<'a> Tiles<'a> {
         if let Some(cache) = self.cache {
             let cached = cache.get_tile(index);
             if cached.is_ok() {
-                debug!("Obtained tile {:?} from cache", index);
+                debug!("Obtained tile {index:?} from cache");
                 return cached;
             }
         }
 
         // TODO: only request once from server
-        debug!("Requesting tile {:?} from server", index);
+        debug!("Requesting tile {index:?} from server");
 
         let url = format!(
             "https://{server}/{z}/{x}/{y}{extension}",
@@ -195,7 +195,7 @@ impl<'a> Tiles<'a> {
         let bytes = response.bytes().await?;
         if let Some(cache) = self.cache {
             if let Err(e) = cache.set_tile(index, bytes.as_ref()) {
-                error!("Couldn't write tile {:?} to cache: {:?}", index, e);
+                error!("Couldn't write tile {index:?} to cache: {e:?}");
             }
         }
 

@@ -72,7 +72,7 @@ impl Window {
             freetype::Library::init().context("Failed to initialize FreeType library")?;
         let font = freetype
             .new_face(FONT_PATH, 0)
-            .context("Failed to load font from path: {FONT_PATH}")?;
+            .context(format!("Failed to load font from path: {FONT_PATH}"))?;
         let font_face = FontFace::create_from_ft(&font).context("Failed to create font face")?;
 
         let app = Application::builder().application_id(Self::APP_ID).build();
@@ -145,7 +145,7 @@ impl Window {
     fn process_update(&mut self, msg: UiMessage) {
         let need_refresh = match msg {
             UiMessage::Activity { id, r#type, points } => {
-                debug!("[{}] Received activity #{}", self.iteration.get(), id);
+                debug!("[{i}] Received activity #{id}", i = self.iteration.get());
                 self.track_state
                     .process_activity(r#type, points, &self.camera);
                 true
@@ -244,7 +244,7 @@ impl Window {
 
     /// Handles a resize event of the drawing area.
     fn handle_resize(&mut self, width: i32, height: i32) {
-        debug!("[{}] Resize({width}, {height})", self.iteration.get());
+        debug!("[{i}] Resize({width}, {height})", i = self.iteration.get());
 
         let mut need_zoom_refresh = false;
         let mut need_offset_refresh = false;
@@ -273,7 +273,7 @@ impl Window {
 
     /// Handles a key press on the keyboard.
     fn handle_key_press(&mut self, keyval: Key) -> bool {
-        debug!("[{}] Key press", self.iteration.get());
+        debug!("[{i}] Key press", i = self.iteration.get());
 
         let accepted = match keyval {
             Key::space => {
@@ -298,7 +298,7 @@ impl Window {
 
     /// Handles a mouse scroll event.
     fn handle_scroll(&mut self, scroll: f64) {
-        debug!("[{}] Scroll({scroll})", self.iteration.get());
+        debug!("[{i}] Scroll({scroll})", i = self.iteration.get());
 
         let mut need_zoom_refresh = false;
         let x_dir = Ordering::Equal;
@@ -319,7 +319,7 @@ impl Window {
 
     /// Handles a mouse press event.
     fn handle_pressed(&mut self, x: f64, y: f64) {
-        debug!("[{}] Pressed({x}, {y})", self.iteration.get());
+        debug!("[{i}] Pressed({x}, {y})", i = self.iteration.get());
 
         self.click = true;
         self.last_pos = Some(Point { x, y })
@@ -327,7 +327,7 @@ impl Window {
 
     /// Handles a mouse release event.
     fn handle_released(&mut self) {
-        debug!("[{}] Released", self.iteration.get());
+        debug!("[{i}] Released", i = self.iteration.get());
 
         self.click = false;
     }
@@ -338,7 +338,7 @@ impl Window {
             return;
         }
 
-        debug!("[{}] Drag({x}, {y})", self.iteration.get());
+        debug!("[{i}] Drag({x}, {y})", i = self.iteration.get());
 
         let mut need_offset_refresh = false;
         let mut x_dir = Ordering::Equal;
@@ -368,7 +368,7 @@ impl Window {
 
     /// Renders the map on the given Cairo context.
     fn render(&self, context: &Context) -> anyhow::Result<()> {
-        debug!("[{}] Render", self.iteration.get());
+        debug!("[{i}] Render", i = self.iteration.get());
 
         let track_stats = self.track_state.debug_statistics(&self.camera);
 
@@ -380,7 +380,7 @@ impl Window {
 
         let tiles_to_draw = self.tile_state.tiles_to_draw();
         for (i, (tile_index, tile)) in tiles_to_draw.iter().enumerate() {
-            trace!("Drawing tile {}/{}", i, tiles_to_draw.len());
+            trace!("Drawing tile {i}/{}", tiles_to_draw.len());
 
             let pixbuf: &Pixbuf = &tile.image.0;
             let pixbuf_width = tile.image.1 - 1;
@@ -408,7 +408,7 @@ impl Window {
         let mut segment_count = 0;
         let mut drawn_segment_count = 0;
         for (i, poly) in self.track_state.visible_polylines(&self.camera).enumerate() {
-            trace!("Drawing polyline {}", i);
+            trace!("Drawing polyline {i}");
             let color = poly.color.0;
             context.set_source_rgb(color[0].into(), color[1].into(), color[2].into());
             if self.thick {
@@ -430,12 +430,12 @@ impl Window {
 
             context.stroke().context("Failed to draw polyline")?;
         }
-        debug!("Drawn {} / {} segments", drawn_segment_count, segment_count);
+        debug!("Drawn {drawn_segment_count} / {segment_count} segments");
 
         let endpoint_count = 2 * self.track_state.polylines_count();
         let mut drawn_endpoint_count = 0;
         for (i, poly) in self.track_state.visible_polylines(&self.camera).enumerate() {
-            trace!("Drawing polyline {}'s endpoints", i);
+            trace!("Drawing polyline {i}'s endpoints");
             if let Some(point) = poly.first_point() {
                 context.set_source_rgb(0.0, 1.0, 0.0);
                 context.arc(
@@ -463,10 +463,7 @@ impl Window {
                 drawn_endpoint_count += 1;
             }
         }
-        debug!(
-            "Drawn {} / {} endpoints",
-            drawn_endpoint_count, endpoint_count
-        );
+        debug!("Drawn {drawn_endpoint_count} / {endpoint_count} endpoints");
 
         let render_stats = RenderStats {
             drawn_tiles_count: tiles_to_draw.len(),

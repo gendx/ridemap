@@ -78,10 +78,10 @@ impl builder::TypedValueParser for StravaConfigParser {
             // TODO: use clap::builder::StyledStr once it supports coloring the arguments.
             let msg = format!(
                 "Failed to parse Strava configuration{}{}: {}\n",
-                arg_str.map(|a| format!(" ({})", a)).unwrap_or_default(),
+                arg_str.map(|a| format!(" ({a})")).unwrap_or_default(),
                 value
                     .to_str()
-                    .map(|f| format!(" from file `{}`", f))
+                    .map(|f| format!(" from file `{f}`"))
                     .unwrap_or_default(),
                 e
             );
@@ -145,7 +145,7 @@ impl<'a> StravaClient<'a> {
             tokio::net::TcpListener::bind((Ipv4Addr::UNSPECIFIED, authorize_redirect_port)).await?;
 
         let (mut socket, addr) = listener.accept().await?;
-        info!("Request from: {}", addr);
+        info!("Request from: {addr}");
 
         let authorized_ip = match addr.ip() {
             IpAddr::V4(ip4) => ip4.is_loopback() || ip4.is_private(),
@@ -155,7 +155,7 @@ impl<'a> StravaClient<'a> {
             socket
                 .write_all(b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\nUnauthorized IP address")
                 .await?;
-            bail!("Unauthorized IP address: {}", addr);
+            bail!("Unauthorized IP address: {addr}");
         }
 
         // TODO: newline
@@ -207,7 +207,7 @@ impl<'a> StravaClient<'a> {
         let response = StravaClient::check_response_status(response).await?;
 
         let token: Token = response.json().await?;
-        debug!("Token = {:#?}", token);
+        debug!("Token = {token:#?}");
 
         Ok(token.access_token)
     }
@@ -251,11 +251,11 @@ impl<'a> StravaClient<'a> {
             .flat_map(|result| {
                 let list = match result {
                     Ok((i, list)) => {
-                        debug!("Received page #{}", i);
+                        debug!("Received page #{i}");
                         list
                     }
                     Err(e) => {
-                        error!("Error receiving page: {}", e);
+                        error!("Error receiving page: {e}");
                         Vec::new()
                     }
                 };
@@ -274,9 +274,8 @@ impl<'a> StravaClient<'a> {
         let response = self
             .client
             .get(format!(
-                "{API_URL}/athlete/activities?per_page={}&page={}",
-                count_per_page,
-                i + 1
+                "{API_URL}/athlete/activities?per_page={count_per_page}&page={page}",
+                page = i + 1
             ))
             .bearer_auth(&self.bearer_token)
             .send()
@@ -312,7 +311,7 @@ impl<'a> StravaClient<'a> {
             .for_each(|activity| async {
                 match activity {
                     Ok((i, a)) => {
-                        trace!("Activity = {:#?}", a);
+                        trace!("Activity = {a:#?}");
                         let summary = a
                             .map
                             .summary_polyline
@@ -338,7 +337,7 @@ impl<'a> StravaClient<'a> {
                             .unwrap();
                         }
                     }
-                    Err(e) => error!("Got an error: {}", e),
+                    Err(e) => error!("Got an error: {e}"),
                 }
             })
             .await;
@@ -358,12 +357,12 @@ impl<'a> StravaClient<'a> {
         if let Some(cache) = self.cache {
             let cached = cache.get_activity(id).await;
             if cached.is_ok() {
-                debug!("Obtained activity {} from cache", i);
+                debug!("Obtained activity {i} from cache");
                 return cached;
             }
         }
 
-        debug!("Query activity {}", i);
+        debug!("Query activity {i}");
         let response = self
             .client
             .get(format!("{API_URL}/activities/{}", activity.id))
@@ -371,22 +370,22 @@ impl<'a> StravaClient<'a> {
             .send()
             .await?;
 
-        debug!("Checking response for activity {}", i);
+        debug!("Checking response for activity {i}");
         let response = StravaClient::check_response_status(response).await?;
 
         let activity_bytes = response.bytes().await?;
         let activity = match serde_json::from_slice(&activity_bytes) {
             Ok(a) => a,
             Err(e) => {
-                error!("Invalid activity:\n{:#?}", activity_bytes);
+                error!("Invalid activity:\n{activity_bytes:#?}");
                 return Err(e.into());
             }
         };
 
-        debug!("Parsed response for activity {}", i);
+        debug!("Parsed response for activity {i}");
         if let Some(cache) = self.cache {
             if let Err(e) = cache.set_activity(id, &activity) {
-                error!("Couldn't write activity {} to cache: {:?}", i, e);
+                error!("Couldn't write activity {i} to cache: {e:?}");
             }
         }
         Ok(activity)
@@ -399,7 +398,7 @@ impl<'a> StravaClient<'a> {
         if status_code != StatusCode::OK {
             error!("Strava server replied with status code {status_code}");
             let fault: Fault = response.json().await?;
-            error!("Strava error = {:#?}", fault);
+            error!("Strava error = {fault:#?}");
             bail!("Strava server replied with status code {status_code}");
         } else {
             Ok(response)

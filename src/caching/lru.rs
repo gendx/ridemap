@@ -109,8 +109,7 @@ where
                 .then(a.generation.get().cmp(&b.generation.get()))
         }) {
             debug!(
-                "Evicting {:?} of priority {}",
-                oldest_key,
+                "Evicting {oldest_key:?} of priority {}",
                 priority(oldest_key)
             );
             let oldest_key = oldest_key.clone();

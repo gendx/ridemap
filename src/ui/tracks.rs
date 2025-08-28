@@ -286,8 +286,7 @@ impl TrackState {
             .filter(|poly| poly.visible(ioffset, iwsize))
             .count();
         debug!(
-            "BBox deduplication: {} / {} polylines visible",
-            visible_count,
+            "BBox deduplication: {visible_count} / {} polylines visible",
             self.zoomed_polylines.len()
         );
 
@@ -304,10 +303,7 @@ impl TrackState {
                 }
             })
             .sum();
-        debug!(
-            "Deduped {} / {} / {} points",
-            visible_points, deduped_points, total_points
-        );
+        debug!("Deduped {visible_points} / {deduped_points} / {total_points} points");
 
         TrackStats {
             total_points,

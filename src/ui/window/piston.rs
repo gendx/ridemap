@@ -97,7 +97,7 @@ impl Window {
             // Supposedly this avoids blurry text.
             TextureSettings::new().min(Filter::Nearest),
         )
-        .context("Failed to load font from {FONT_PATH}")?;
+        .context(format!("Failed to load font from {FONT_PATH}"))?;
 
         while let Some(event) = piston_window.next() {
             self.iteration.set(self.iteration.get() + 1);
@@ -113,10 +113,10 @@ impl Window {
                     self.process_render(&event, piston_window, &mut glyphs);
                 }
                 Event::Loop(Loop::AfterRender(_)) => {
-                    trace!("[{}] AfterRender", self.iteration.get());
+                    trace!("[{i}] AfterRender", i = self.iteration.get());
                 }
                 Event::Loop(Loop::Idle(_)) => {
-                    trace!("[{}] Idle", self.iteration.get());
+                    trace!("[{i}] Idle", i = self.iteration.get());
                 }
                 _ => {}
             }
@@ -162,7 +162,7 @@ impl Window {
 
     /// Processes user input.
     fn process_input(&mut self, input: Input) {
-        trace!("[{}] Input", self.iteration.get());
+        trace!("[{i}] Input", i = self.iteration.get());
 
         let mut need_zoom_refresh = false;
         let mut need_offset_refresh = false;
@@ -250,12 +250,12 @@ impl Window {
 
     /// Processes the update event from Piston.
     fn process_update(&mut self, piston_window: &mut PistonWindow) {
-        trace!("[{}] Update", self.iteration.get());
+        trace!("[{i}] Update", i = self.iteration.get());
 
         for msg in self.ui_rx.try_iter() {
             match msg {
                 UiMessage::Activity { id, r#type, points } => {
-                    debug!("[{}] Received activity #{}", self.iteration.get(), id);
+                    debug!("[{i}] Received activity #{id}", i = self.iteration.get());
                     self.track_state
                         .process_activity(r#type, points, &self.camera);
 
@@ -276,7 +276,7 @@ impl Window {
                                 ) {
                                     Ok(texture) => Some((Image::new().rect(index.rect()), texture)),
                                     Err(e) => {
-                                        error!("Error creating texture: {}", e);
+                                        error!("Error creating texture: {e}");
                                         None
                                     }
                                 }
@@ -293,11 +293,11 @@ impl Window {
         piston_window: &mut PistonWindow,
         glyphs: &mut Glyphs,
     ) {
-        trace!("[{}] Render", self.iteration.get());
+        trace!("[{i}] Render", i = self.iteration.get());
 
         if self.need_refresh || !self.lazy_ui_refresh {
             if self.lazy_ui_refresh {
-                debug!("[{}] Rendering", self.iteration.get());
+                debug!("[{i}] Rendering", i = self.iteration.get());
             }
 
             piston_window.draw_2d(event, |context, graphics, device| {
@@ -331,7 +331,7 @@ impl Window {
 
         let tiles_to_draw = self.tile_state.tiles_to_draw();
         for (i, (_, tile)) in tiles_to_draw.iter().enumerate() {
-            trace!("Drawing tile {}/{}", i, tiles_to_draw.len());
+            trace!("Drawing tile {i}/{}", tiles_to_draw.len());
             let image: &Image = &tile.image.0;
             let texture: &G2dTexture = &tile.image.1;
             image.draw(texture, &context.draw_state, tile_transform, graphics);
@@ -341,7 +341,7 @@ impl Window {
         let mut segment_count = 0;
         let mut drawn_segment_count = 0;
         for (i, poly) in self.track_state.visible_polylines(&self.camera).enumerate() {
-            trace!("Drawing polyline {}", i);
+            trace!("Drawing polyline {i}");
             let color = poly.color.0;
             let line = if self.thick {
                 Line::new(color, Self::THICKNESS)
@@ -362,12 +362,12 @@ impl Window {
                 );
             }
         }
-        debug!("Drawn {} / {} segments", drawn_segment_count, segment_count);
+        debug!("Drawn {drawn_segment_count} / {segment_count} segments");
 
         let endpoint_count = 2 * self.track_state.polylines_count();
         let mut drawn_endpoint_count = 0;
         for (i, poly) in self.track_state.visible_polylines(&self.camera).enumerate() {
-            trace!("Drawing polyline {}'s endpoints", i);
+            trace!("Drawing polyline {i}'s endpoints");
             if let Some(point) = poly.first_point() {
                 graphics::ellipse(
                     [0.0, 1.0, 0.0, 1.0],
@@ -387,10 +387,7 @@ impl Window {
                 drawn_endpoint_count += 1;
             }
         }
-        debug!(
-            "Drawn {} / {} endpoints",
-            drawn_endpoint_count, endpoint_count
-        );
+        debug!("Drawn {drawn_endpoint_count} / {endpoint_count} endpoints");
 
         RenderStats {
             drawn_tiles_count: tiles_to_draw.len(),

@@ -103,7 +103,7 @@ pub async fn get_tracks_parallel(
             match track {
                 Ok((i, track)) => {
                     trace!("Track = {:#?}", track);
-                    debug!("Polyline has {:?} points", track.line.len());
+                    debug!("Polyline has {} points", track.line.len());
                     tx.send(UiMessage::Activity {
                         id: i,
                         // TODO: Track type?
@@ -112,7 +112,7 @@ pub async fn get_tracks_parallel(
                     })
                     .unwrap();
                 }
-                Err(e) => error!("Got an error: {}", e),
+                Err(e) => error!("Got an error: {e}"),
             }
         })
         .await;
@@ -122,7 +122,7 @@ pub async fn get_tracks_parallel(
 
 /// Reads and parses the track contained in the given GPX file.
 async fn get_track(path: String, i: usize) -> anyhow::Result<Track> {
-    debug!("Get track {}", i);
+    debug!("Get track {i}");
     let path2 = path.clone();
     task::spawn_blocking(move || Gpx::read_from_file(path).map(Track::from))
         .await

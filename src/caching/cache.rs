@@ -26,10 +26,9 @@ impl Cache {
         let map_provider_folder = map_provider.cache_folder.clone();
         fs::create_dir_all(cache_root.join("strava/activities"))
             .context("Failed to create the strava/activities cache")?;
-        fs::create_dir_all(cache_root.join(format!("tiles/{}", map_provider_folder)))
-            .with_context(|| {
-                format!("Failed to create the tile cache for provider: {map_provider_folder}")
-            })?;
+        fs::create_dir_all(cache_root.join(format!("tiles/{map_provider_folder}"))).with_context(
+            || format!("Failed to create the tile cache for provider: {map_provider_folder}"),
+        )?;
         Ok(Self {
             cache_root,
             map_provider_folder,
@@ -93,8 +92,7 @@ impl Cache {
 
     /// Computes the path associated to the given activity.
     fn activity_path(&self, id: u64) -> PathBuf {
-        self.cache_root
-            .join(format!("strava/activities/{}.json", id))
+        self.cache_root.join(format!("strava/activities/{id}.json"))
     }
 
     /// Computes the path associated to the given map tile.

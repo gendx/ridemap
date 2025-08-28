@@ -197,24 +197,16 @@ impl TileBox {
         let mut ideal_level = -((max_pixels_per_tile as f64) / zoom).log2().floor() as i32;
 
         if ideal_level < 0 {
-            trace!("Clamping negative level {} => 0", ideal_level);
+            trace!("Clamping negative level {ideal_level} => 0");
             ideal_level = 0;
         } else if ideal_level > max_tile_level {
-            trace!(
-                "Clamping too large level {} => {}",
-                ideal_level,
-                max_tile_level
-            );
+            trace!("Clamping too large level {ideal_level} => {max_tile_level}");
             ideal_level = max_tile_level;
         }
 
-        trace!("Ideal tile level = {} (zoom = {})", ideal_level, zoom);
+        trace!("Ideal tile level = {ideal_level} (zoom = {zoom})");
         let pixels_per_tile = 0.5_f64.powi(ideal_level) * zoom;
-        trace!(
-            "Pixels per tile at level {} = {}",
-            ideal_level,
-            pixels_per_tile
-        );
+        trace!("Pixels per tile at level {ideal_level} = {pixels_per_tile}");
 
         let ideal_factor = 0.5_f64.powi(ideal_level);
         let ideal_zoom = ideal_factor * zoom;
@@ -258,7 +250,7 @@ impl TileBox {
             }
         };
 
-        trace!("Ideal tiles: {:#?}", result);
+        trace!("Ideal tiles: {result:#?}");
         trace!("Ideal tile count: {}", result.len());
 
         result

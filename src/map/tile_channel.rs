@@ -136,13 +136,13 @@ impl TileRequestReceiver {
                         // speculated).
                         let current = current.read().unwrap();
                         if current.tiles.contains(&tile) {
-                            debug!("Request {:?}", tile);
+                            debug!("Request {tile:?}");
                             Some(TileRequest::Tile(tile))
                         } else if current.speculative.contains(&tile) {
-                            debug!("Speculate {:?}", tile);
+                            debug!("Speculate {tile:?}");
                             Some(TileRequest::Speculate(tile))
                         } else {
-                            debug!("Drop {:?}", tile);
+                            debug!("Drop {tile:?}");
                             None
                         }
                     }
