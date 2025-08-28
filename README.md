@@ -8,7 +8,7 @@
 [![Test Status](https://github.com/gendx/ridemap/workflows/Tests/badge.svg)](https://github.com/gendx/ridemap/actions/workflows/tests.yml)
 
 This program allows you to visualize GPS tracks on an interactive map of the world.
-GPS tracks can be loaded from local GPX files, or fetched via the Strava API.
+GPS tracks can be loaded from local GPX or GeoJSON files, or fetched via the Strava API.
 It is written in [Rust](https://www.rust-lang.org/).
 
 ## Usage
@@ -31,6 +31,17 @@ $ cargo run --release -- \
     --lazy-ui-refresh \
     gpx \
     --file track1.gpx,track2.gpx
+```
+
+Loading tracks from local GeoJSON files:
+
+```bash
+$ cargo run --release -- \
+    --cache-directory cache/ \
+    --map-config map-provider.json \
+    --lazy-ui-refresh \
+    geojson \
+    --file track1.geojson,track2.geojson
 ```
 
 Loading tracks from Strava activities (see the configuration [below](#strava-api)):

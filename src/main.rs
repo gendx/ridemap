@@ -24,8 +24,8 @@ use map::tiles::Tiles;
 use std::sync::mpsc::{channel, Sender};
 use std::thread;
 use tokio::runtime::Runtime;
-use tracks::gpx::get_tracks_parallel;
 use tracks::strava::StravaClient;
+use tracks::{geojson, gpx};
 use ui::window::Window;
 use ui::UiMessage;
 
@@ -171,7 +171,10 @@ async fn fetch_tracks(
             fetch_strava_activities(ui_tx, cache, client, strava_params, parallel_requests).await
         }
         Some(TrackParams::Gpx(gpx_params)) => {
-            get_tracks_parallel(ui_tx, &gpx_params.files, parallel_requests).await
+            gpx::get_tracks_parallel(ui_tx, &gpx_params.files, parallel_requests).await
+        }
+        Some(TrackParams::Geojson(geojson_params)) => {
+            geojson::get_tracks_parallel(ui_tx, &geojson_params.files, parallel_requests).await
         }
     }
 }

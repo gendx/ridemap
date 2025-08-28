@@ -58,6 +58,9 @@ pub enum TrackParams {
 
     /// Fetch activities from GPX file(s).
     Gpx(GpxParams),
+
+    /// Fetch activities from GeoJSON file(s).
+    Geojson(GeoJsonParams),
 }
 
 /// Parameters to load Strava activities.
@@ -92,6 +95,14 @@ pub struct StravaParams {
 #[derive(Parser, Debug)]
 pub struct GpxParams {
     /// GPX file(s) to read.
+    #[arg(long = "file", short = 'f', required = true, value_delimiter = ',')]
+    pub files: Vec<String>,
+}
+
+/// Parameters to load GeoJSON files.
+#[derive(Parser, Debug)]
+pub struct GeoJsonParams {
+    /// GeoJSON file(s) to read.
     #[arg(long = "file", short = 'f', required = true, value_delimiter = ',')]
     pub files: Vec<String>,
 }
