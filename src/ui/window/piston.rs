@@ -28,6 +28,15 @@ use std::fmt::Debug;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 
+#[derive(Clone, Copy)]
+struct Thickness(usize);
+
+impl Thickness {
+    fn toggle(&mut self) {
+        self.0 = (self.0 + 1) % Window::THICKNESSES.len();
+    }
+}
+
 /// Window state on the GUI.
 pub struct Window {
     ui_rx: Receiver<UiMessage>,
@@ -36,7 +45,7 @@ pub struct Window {
     tile_state: TileState<(Image, G2dTexture)>,
     track_state: TrackState,
     lazy_ui_refresh: bool,
-    thick: bool,
+    thick: Thickness,
     click: bool,
     need_refresh: bool,
     iteration: Rc<Cell<usize>>,
@@ -49,8 +58,8 @@ impl Window {
     const INITIAL_HEIGHT: u32 = 480;
     /// Radius of track endpoints.
     const CIRCLE_RADIUS: f64 = 5.0;
-    /// Thickness of tracks in thick mode.
-    const THICKNESS: f64 = 4.0;
+    /// Thickness of tracks in various modes.
+    const THICKNESSES: [f64; 5] = [1.0, 2.0, 4.0, 6.0, 8.0];
     /// Font size.
     const FONT_SIZE: FontSize = 12;
 
@@ -153,7 +162,7 @@ impl Window {
             ),
             track_state: TrackState::new(),
             lazy_ui_refresh,
-            thick: false,
+            thick: Thickness(0),
             click: false,
             need_refresh: true,
             iteration,
@@ -203,7 +212,7 @@ impl Window {
                 scancode: _,
             }) => match key {
                 Key::Space => {
-                    self.thick = !self.thick;
+                    self.thick.toggle();
                     true
                 }
                 Key::T => {
@@ -343,12 +352,13 @@ impl Window {
         for (i, poly) in self.track_state.visible_polylines(&self.camera).enumerate() {
             trace!("Drawing polyline {i}");
             let color = poly.color.0;
-            let line = if self.thick {
-                Line::new(color, Self::THICKNESS)
-                    .width(Self::THICKNESS)
-                    .shape(Shape::Bevel)
-            } else {
+            let line_width = Self::THICKNESSES[self.thick.0];
+            let line = if line_width == 1.0 {
                 Line::new(color, 1.0)
+            } else {
+                Line::new(color, line_width)
+                    .width(line_width)
+                    .shape(Shape::Bevel)
             };
 
             segment_count += poly.segments_count();

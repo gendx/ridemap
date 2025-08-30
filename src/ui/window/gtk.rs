@@ -29,12 +29,21 @@ use std::rc::Rc;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
+#[derive(Clone, Copy)]
+struct Thickness(usize);
+
+impl Thickness {
+    fn toggle(&mut self) {
+        self.0 = (self.0 + 1) % Window::THICKNESSES.len();
+    }
+}
+
 /// Window state on the GUI.
 pub struct Window {
     camera: Camera,
     tile_state: TileState<(Pixbuf, u32)>,
     track_state: TrackState,
-    thick: bool,
+    thick: Thickness,
     click: bool,
     last_pos: Option<Point<f64>>,
     iteration: Rc<Cell<usize>>,
@@ -51,8 +60,8 @@ impl Window {
     const INITIAL_HEIGHT: u32 = 960;
     /// Radius of track endpoints.
     const CIRCLE_RADIUS: f64 = 5.0;
-    /// Thickness of tracks in thick mode.
-    const THICKNESS: f64 = 4.0;
+    /// Thickness of tracks in various modes.
+    const THICKNESSES: [f64; 5] = [1.0, 2.0, 4.0, 6.0, 8.0];
     /// Font size.
     const FONT_SIZE: f64 = 20.0;
     /// How often to fetch messages from the background thread.
@@ -127,7 +136,7 @@ impl Window {
                 iteration.clone(),
             ),
             track_state: TrackState::new(),
-            thick: false,
+            thick: Thickness(0),
             click: false,
             last_pos: None,
             iteration,
@@ -277,7 +286,7 @@ impl Window {
 
         let accepted = match keyval {
             Key::space => {
-                self.thick = !self.thick;
+                self.thick.toggle();
                 true
             }
             Key::t => {
@@ -411,11 +420,8 @@ impl Window {
             trace!("Drawing polyline {i}");
             let color = poly.color.0;
             context.set_source_rgb(color[0].into(), color[1].into(), color[2].into());
-            if self.thick {
-                context.set_line_width(Self::THICKNESS);
-            } else {
-                context.set_line_width(1.0);
-            };
+            let line_width = Self::THICKNESSES[self.thick.0];
+            context.set_line_width(line_width);
 
             segment_count += poly.segments_count();
             let mut last_index = None;
