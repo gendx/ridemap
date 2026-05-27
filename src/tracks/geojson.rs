@@ -5,7 +5,7 @@ use super::schema::ActivityType;
 use crate::ui::UiMessage;
 use anyhow::Context;
 use futures::{stream, StreamExt};
-use geojson::{Feature, FeatureCollection, GeoJson, Geometry, LineStringType, Value};
+use geojson::{Feature, FeatureCollection, GeoJson, Geometry, GeometryValue, LineStringType};
 use log::{debug, error, trace};
 use std::fs::File;
 use std::io::BufReader;
@@ -68,20 +68,20 @@ impl From<GeoJsonFile> for Vec<Track> {
 
         fn visit_geometry(geometry: &Geometry, tracks: &mut Vec<Track>) {
             match &geometry.value {
-                Value::LineString(line) => {
+                GeometryValue::LineString { coordinates: line } => {
                     tracks.push(Track::from(line));
                 }
-                Value::MultiLineString(lines) => {
+                GeometryValue::MultiLineString { coordinates: lines } => {
                     for line in lines {
                         tracks.push(Track::from(line));
                     }
                 }
-                Value::Point(_)
-                | Value::MultiPoint(_)
-                | Value::Polygon(_)
-                | Value::MultiPolygon(_) => (),
-                Value::GeometryCollection(collection) => {
-                    for geometry in collection {
+                GeometryValue::Point { .. }
+                | GeometryValue::MultiPoint { .. }
+                | GeometryValue::Polygon { .. }
+                | GeometryValue::MultiPolygon { .. } => (),
+                GeometryValue::GeometryCollection { geometries } => {
+                    for geometry in geometries {
                         visit_geometry(geometry, tracks);
                     }
                 }
