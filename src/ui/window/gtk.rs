@@ -43,6 +43,7 @@ pub struct Window {
     camera: Camera,
     tile_state: TileState<(Pixbuf, u32)>,
     track_state: TrackState,
+    help: bool,
     thick: Thickness,
     click: bool,
     last_pos: Option<Point<f64>>,
@@ -136,6 +137,7 @@ impl Window {
                 iteration.clone(),
             ),
             track_state: TrackState::new(),
+            help: true,
             thick: Thickness(0),
             click: false,
             last_pos: None,
@@ -289,12 +291,16 @@ impl Window {
                 self.thick.toggle();
                 true
             }
-            Key::t => {
-                self.track_state.toggle_color_by_type();
+            Key::h => {
+                self.help = !self.help;
                 true
             }
             Key::r => {
                 self.track_state.randomize_colors();
+                true
+            }
+            Key::t => {
+                self.track_state.toggle_color_by_type();
                 true
             }
             _ => false,
@@ -483,7 +489,7 @@ impl Window {
         Ok(())
     }
 
-    /// Renders the debugging statistics at the bottom of the UI.
+    /// Renders the debugging statistics at the bottom of the UI, and the help if enabled.
     fn render_text(&self, context: &Context, render_stats: RenderStats) -> anyhow::Result<()> {
         context.set_source_rgba(1.0, 1.0, 1.0, 0.5);
         context.rectangle(
@@ -493,6 +499,11 @@ impl Window {
             3.5 * Self::FONT_SIZE,
         );
         context.fill().context("Failed to draw rectangle")?;
+
+        if self.help {
+            context.rectangle(0.0, 0.0, self.camera.width(), 1.5 * Self::FONT_SIZE);
+            context.fill().context("Failed to draw rectangle")?;
+        }
 
         context.set_font_face(&self.font_face);
         context.set_font_size(Self::FONT_SIZE);
@@ -519,6 +530,13 @@ impl Window {
                 render_stats.drawn_segment_count, render_stats.segment_count
             ))
             .context("Failed to draw text")?;
+
+        if self.help {
+            context.move_to(0.0, 1.0 * Self::FONT_SIZE);
+            context
+                .show_text("H: help, R: randomize colors, T: color by type, SPACE: thickness")
+                .context("Failed to draw text")?;
+        }
 
         Ok(())
     }
