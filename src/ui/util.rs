@@ -4,7 +4,7 @@ use crate::ui::tracks::TrackStats;
 use image::{ImageError, ImageFormat, RgbaImage};
 use log::warn;
 use rand::distr::Open01;
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 
 /// RGBA color.
 #[derive(Clone, Copy)]
