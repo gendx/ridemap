@@ -179,7 +179,7 @@ impl<Image> TileState<Image> {
         }
 
         let mut tiles_to_draw: Vec<(TileIndex, &Tile<Image>)> = tiles_to_draw.drain().collect();
-        tiles_to_draw.sort_by(|a, b| a.0.cmp(&b.0));
+        tiles_to_draw.sort_by_key(|t| t.0);
 
         tiles_to_draw
     }

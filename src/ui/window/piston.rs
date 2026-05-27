@@ -230,19 +230,15 @@ impl Window {
                     .scroll(scroll[1], &mut need_zoom_refresh, &mut z_dir);
                 true
             }
-            Input::Move(Motion::MouseRelative(coord)) => {
-                if self.click {
-                    self.camera.drag_relative(
-                        coord[0],
-                        coord[1],
-                        &mut need_offset_refresh,
-                        &mut x_dir,
-                        &mut y_dir,
-                    );
-                    true
-                } else {
-                    false
-                }
+            Input::Move(Motion::MouseRelative(coord)) if self.click => {
+                self.camera.drag_relative(
+                    coord[0],
+                    coord[1],
+                    &mut need_offset_refresh,
+                    &mut x_dir,
+                    &mut y_dir,
+                );
+                true
             }
             _ => false,
         };
