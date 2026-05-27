@@ -20,8 +20,7 @@ geojson = { version = "1.0.0" }
 gtk4 = { version = "0.11.3", optional = true }
 image = { version = "0.25.10", default-features = false, features = ["png"] }
 log = "0.4.30"
-piston_window = { version = "0.132.0", optional = true }
-piston2d-graphics = { version = "0.44.0", optional = true }
+piston_window = { version = "0.147.0", optional = true }
 rand = "0.10.1"
 regex = { version = "1.12.3", default-features = false, features = ["std"] }
 reqwest = { version = "0.13.4", features = ["json", "query"] }
@@ -33,7 +32,7 @@ tokio = { version = "1.52.3", features = ["rt-multi-thread"] }
 [features]
 default = ["backend_gtk4"]
 backend_gtk4 = ["dep:gtk4", "dep:cairo-rs", "dep:freetype-rs"]
-backend_piston = ["dep:piston_window", "dep:piston2d-graphics"]
+backend_piston = ["dep:piston_window"]
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--document-private-items"]

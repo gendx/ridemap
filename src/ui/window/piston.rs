@@ -10,17 +10,18 @@ use crate::ui::UiMessage;
 use anyhow::bail;
 use anyhow::Context as AnyhowContext;
 use futures::channel::oneshot;
-use graphics::character::CharacterCache;
-use graphics::image::Image;
-use graphics::line::{Line, Shape};
-use graphics::types::FontSize;
-use graphics::Graphics;
 use log::{debug, error, info, trace};
-use piston_window::ellipse::circle;
+use piston_window::graphics;
+use piston_window::graphics::ellipse::circle;
+use piston_window::graphics::image::Image;
+use piston_window::graphics::line::{Line, Shape};
+use piston_window::graphics::types::FontSize;
+use piston_window::graphics::{CharacterCache, Context, Transformed};
+use piston_window::texture::{Filter, TextureSettings};
+use piston_window::wgpu_graphics::{Texture, TextureContext, WgpuGraphics};
 use piston_window::{
-    Button, ButtonArgs, ButtonState, Context, Event, Filter, G2dTexture, GenericEvent, Glyphs,
-    Input, Key, Loop, Motion, MouseButton, PistonWindow, ResizeArgs, Texture, TextureContext,
-    TextureSettings, Transformed, WindowSettings,
+    Button, ButtonArgs, ButtonState, Event, G2dTexture, GenericEvent, Glyphs, Input, Key, Loop,
+    Motion, MouseButton, PistonWindow, ResizeArgs, WindowSettings,
 };
 use std::cell::Cell;
 use std::cmp::Ordering;
@@ -56,12 +57,22 @@ impl Window {
     const INITIAL_WIDTH: u32 = 640;
     /// Initial window height.
     const INITIAL_HEIGHT: u32 = 480;
+    /// Hard-coded scaling factor.
+    const SCALING_FACTOR: f64 = 1.4;
     /// Radius of track endpoints.
     const CIRCLE_RADIUS: f64 = 5.0;
     /// Thickness of tracks in various modes.
     const THICKNESSES: [f64; 5] = [1.0, 2.0, 4.0, 6.0, 8.0];
     /// Font size.
     const FONT_SIZE: FontSize = 12;
+
+    fn camera_width(&self) -> f64 {
+        self.camera.width() / Self::SCALING_FACTOR
+    }
+
+    fn camera_height(&self) -> f64 {
+        self.camera.height() / Self::SCALING_FACTOR
+    }
 
     /// Runs the UI loop, in the UI thread.
     pub fn ui_loop(
@@ -99,10 +110,7 @@ impl Window {
         self.tile_state.start();
         let mut glyphs = Glyphs::new(
             FONT_PATH,
-            TextureContext {
-                factory: piston_window.factory.clone(),
-                encoder: piston_window.factory.create_command_buffer().into(),
-            },
+            TextureContext::from_parts(piston_window.device.clone(), piston_window.queue.clone()),
             // Supposedly this avoids blurry text.
             TextureSettings::new().min(Filter::Nearest),
         )
@@ -305,13 +313,11 @@ impl Window {
                 debug!("[{i}] Rendering", i = self.iteration.get());
             }
 
-            piston_window.draw_2d(event, |context, graphics, device| {
+            piston_window.draw_2d(event, |context, graphics, _device| {
                 let render_stats = self.render(context, graphics);
                 if let Err(e) = self.render_text(context, graphics, glyphs, render_stats) {
                     error!("Failed to render text: {e:?}");
                 }
-                // Update glyphs before rendering.
-                glyphs.factory.encoder.flush(device);
             });
         }
 
@@ -319,10 +325,7 @@ impl Window {
     }
 
     /// Renders the UI on the given graphical context.
-    fn render<G>(&self, context: Context, graphics: &mut G) -> RenderStats
-    where
-        G: Graphics<Texture = G2dTexture>,
-    {
+    fn render(&self, context: Context, graphics: &mut WgpuGraphics) -> RenderStats {
         let track_stats = self.track_state.debug_statistics(&self.camera);
 
         graphics::clear([1.0, 1.0, 0.7, 1.0], graphics);
@@ -404,15 +407,14 @@ impl Window {
     }
 
     /// Renders the debugging statistics at the bottom of the UI.
-    fn render_text<C, G>(
+    fn render_text<C>(
         &self,
         context: Context,
-        graphics: &mut G,
+        graphics: &mut WgpuGraphics,
         character_cache: &mut C,
         render_stats: RenderStats,
     ) -> anyhow::Result<()>
     where
-        G: Graphics<Texture = G2dTexture>,
         C: CharacterCache<Texture = G2dTexture>,
         C::Error: Debug,
     {
@@ -422,24 +424,24 @@ impl Window {
             [1.0, 1.0, 1.0, 0.5],
             [
                 0.0,
-                self.camera.height() - 3.5 * font_size,
-                self.camera.width(),
+                self.camera_height() - 3.5 * font_size,
+                self.camera_width(),
                 3.5 * font_size,
             ],
             context.transform,
             graphics,
         );
 
-        // Render at twice the font size but with 0.5 zoom for Retina displays. See https://github.com/PistonDevelopers/piston/issues/1240#issuecomment-569318143.
+        // Render at SCALING_FACTOR the font size but with 1/SCALING_FACTOR zoom for Retina displays. See https://github.com/PistonDevelopers/piston/issues/1240#issuecomment-569318143.
         if let Err(e) = graphics::text(
             [0.0, 0.0, 0.0, 1.0],
-            Self::FONT_SIZE * 2,
+            (Self::FONT_SIZE as f64 * Self::SCALING_FACTOR) as u32,
             &format!("Drawn {} tiles", render_stats.drawn_tiles_count),
             character_cache,
             context
                 .transform
-                .trans(0.0, self.camera.height() - 2.5 * font_size)
-                .zoom(0.5),
+                .trans(0.0, self.camera_height() - 2.5 * font_size)
+                .zoom(1.0 / Self::SCALING_FACTOR),
             graphics,
         ) {
             bail!("Failed to draw text: {e:?}");
@@ -448,7 +450,7 @@ impl Window {
         let track_stats = &render_stats.track_stats;
         if let Err(e) = graphics::text(
             [0.0, 0.0, 0.0, 1.0],
-            Self::FONT_SIZE * 2,
+            (Self::FONT_SIZE as f64 * Self::SCALING_FACTOR) as u32,
             &format!(
                 "Deduped {} / {} / {} points",
                 track_stats.visible_points, track_stats.deduped_points, track_stats.total_points
@@ -456,8 +458,8 @@ impl Window {
             character_cache,
             context
                 .transform
-                .trans(0.0, self.camera.height() - 1.5 * font_size)
-                .zoom(0.5),
+                .trans(0.0, self.camera_height() - 1.5 * font_size)
+                .zoom(1.0 / Self::SCALING_FACTOR),
             graphics,
         ) {
             bail!("Failed to draw text: {e:?}");
@@ -465,7 +467,7 @@ impl Window {
 
         if let Err(e) = graphics::text(
             [0.0, 0.0, 0.0, 1.0],
-            Self::FONT_SIZE * 2,
+            (Self::FONT_SIZE as f64 * Self::SCALING_FACTOR) as u32,
             &format!(
                 "Drawn {} / {} segments",
                 render_stats.drawn_segment_count, render_stats.segment_count
@@ -473,8 +475,8 @@ impl Window {
             character_cache,
             context
                 .transform
-                .trans(0.0, self.camera.height() - 0.5 * font_size)
-                .zoom(0.5),
+                .trans(0.0, self.camera_height() - 0.5 * font_size)
+                .zoom(1.0 / Self::SCALING_FACTOR),
             graphics,
         ) {
             bail!("Failed to draw text: {e:?}");
